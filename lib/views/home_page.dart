@@ -1,51 +1,82 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:kutuku/tabs/categories_tab.dart';
+import 'package:kutuku/tabs/home_tab.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 40.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            // center text vertically with image
-            children: [
-              CircleAvatar(
-                radius: 35,
-                backgroundImage: AssetImage('assets/image/image1.png'),
-                backgroundColor: Colors.white,
-              ),
-              const SizedBox(width: 16, height: 20),
-
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                mainAxisAlignment: MainAxisAlignment.start,
-
-                children: const [
-                  Text(
-                    'Hi, Callista',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.black,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              children: [
+                Row(
+                  // center text vertically with image
+                  children: [
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundImage: AssetImage(
+                        'assets/image/profile_photo.jpg',
+                      ),
+                      // backgroundColor: Colors.white,
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Let’s start shopping',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                    const SizedBox(width: 10),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hi, Callista',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Let’s start shopping',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const Spacer(),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {},
+                          child: Icon(Iconsax.search_normal),
+                        ),
+                        SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Icon(Iconsax.notification),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                //the shop tabs
+                TabBar(tabs: [Tab(text: 'Home'), Tab(text: 'Categories')]),
+                //tabBar view
+                Expanded(
+                  child: TabBarView(children: [HomeTab(), CategoriesTab()]),
+                ),
+              ],
+            ),
           ),
         ),
       ),
