@@ -22,7 +22,19 @@ dependencies:
   go_router: ^16.0.0
   lottie: ^3.3.1
   iconsax: ^0.0.3
-  provider: ^6.1.5+1
+
+  # State Management - Riverpod is a powerful, compile-safe state management solution
+  flutter_riverpod: ^2.6.1
+
+  # API Integration - HTTP client for making API requests
+  http: ^1.2.2
+
+  # Secure Storage - For storing auth tokens and sensitive data securely
+  flutter_secure_storage: ^9.2.2
+
+  # JSON Serialization - For converting JSON to Dart objects
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
 
 
 
@@ -32,8 +44,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-
   flutter_lints: ^5.0.0
+
+  # Code Generation - For generating JSON serialization and immutable classes
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.9.2
 
 
 flutter:
