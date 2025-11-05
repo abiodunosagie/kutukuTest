@@ -3,26 +3,16 @@
 // ============================================================================
 // This file defines a generic wrapper for API responses.
 //
-// WHY DO WE NEED THIS?
-// APIs can return success OR error responses. We need a consistent way to
-// handle both cases throughout our app.
+// SIMPLIFIED VERSION:
+// This version doesn't use Freezed or JSON serialization because:
+// 1. Generic types (T) are complex with json_serializable
+// 2. We don't actually deserialize to ApiResponse in our code
+// 3. We convert JSON directly to User, Product, etc.
 //
-// WHAT DOES IT SOLVE?
-// 1. Consistent error handling
-// 2. Type-safe response parsing
-// 3. Clear success/failure states
-// 4. Standardized error messages
-//
-// Instead of checking status codes everywhere, we check response.success
-// ============================================================================
-
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'api_response.freezed.dart';
-part 'api_response.g.dart';
-
-// ============================================================================
-// API RESPONSE CLASS
+// This class is mainly used for:
+// - Consistent response structure in services
+// - Type-safe response handling
+// - Clear success/failure states
 // ============================================================================
 
 /// Generic wrapper for API responses
@@ -31,139 +21,60 @@ part 'api_response.g.dart';
 /// T represents the type of data this response contains
 /// Example: ApiResponse<User>, ApiResponse<Product>, ApiResponse<List<Product>>
 ///
-/// WHY GENERICS?
-/// Instead of creating ApiResponse<User>, ApiResponse<Product>, etc.,
-/// we create ONE ApiResponse<T> that works with any type!
-///
 /// EXAMPLE RESPONSES:
 ///
 /// SUCCESS:
-/// ```json
-/// {
-///   "success": true,
-///   "message": "Login successful",
-///   "data": { "id": 1, "username": "john", ... }
-/// }
+/// ```dart
+/// ApiResponse<User>(
+///   success: true,
+///   message: "Login successful",
+///   data: user,
+/// )
 /// ```
 ///
 /// ERROR:
-/// ```json
-/// {
-///   "success": false,
-///   "message": "Invalid credentials",
-///   "error": "Authentication failed"
-/// }
+/// ```dart
+/// ApiResponse<User>(
+///   success: false,
+///   message: "Invalid credentials",
+///   error: "Authentication failed",
+/// )
 /// ```
-@freezed
-class ApiResponse<T> with _$ApiResponse<T> {
-  const factory ApiResponse({
-    /// Indicates if the request was successful
-    /// true = success, false = error
-    ///
-    /// USAGE:
-    /// ```dart
-    /// if (response.success) {
-    ///   // Handle success
-    ///   print(response.data);
-    /// } else {
-    ///   // Handle error
-    ///   print(response.message);
-    /// }
-    /// ```
-    @Default(true) bool success,
+class ApiResponse<T> {
+  /// Indicates if the request was successful
+  /// true = success, false = error
+  final bool success;
 
-    /// Human-readable message
-    /// Success: "Login successful", "Product added to cart"
-    /// Error: "Invalid credentials", "Product out of stock"
-    String? message,
+  /// Human-readable message
+  /// Success: "Login successful", "Product added to cart"
+  /// Error: "Invalid credentials", "Product out of stock"
+  final String? message;
 
-    /// The actual data returned by the API
-    /// Can be any type: User, Product, List<Product>, etc.
-    ///
-    /// WHY NULLABLE?
-    /// - Success responses have data
-    /// - Error responses might not have data
-    ///
-    /// EXAMPLE:
-    /// ```dart
-    /// final response = ApiResponse<User>(data: user);
-    /// final user = response.data; // Type: User?
-    /// ```
-    T? data,
-
-    /// Error details (if request failed)
-    /// Only present when success = false
-    ///
-    /// Could be:
-    /// - Error message from server
-    /// - Exception message
-    /// - Validation errors
-    ///
-    /// EXAMPLE:
-    /// ```dart
-    /// ApiResponse(
-    ///   success: false,
-    ///   message: 'Validation failed',
-    ///   error: 'Email is required',
-    /// )
-    /// ```
-    String? error,
-
-    /// HTTP status code (optional)
-    /// 200 = OK, 404 = Not Found, 500 = Server Error, etc.
-    ///
-    /// USEFUL FOR:
-    /// - Detailed error handling
-    /// - Debugging
-    /// - Analytics
-    ///
-    /// EXAMPLE:
-    /// ```dart
-    /// if (response.statusCode == 401) {
-    ///   // Unauthorized - redirect to login
-    /// }
-    /// ```
-    int? statusCode,
-  }) = _ApiResponse<T>;
-
-  /// Creates ApiResponse from JSON
+  /// The actual data returned by the API
+  /// Can be any type: User, Product, List<Product>, etc.
   ///
-  /// PROBLEM WITH GENERICS:
-  /// Freezed can't automatically deserialize the generic type T
-  /// We need to tell it HOW to deserialize T
-  ///
-  /// SOLUTION:
-  /// Pass a fromJsonT function that knows how to deserialize T
-  ///
-  /// EXAMPLE USAGE:
-  /// ```dart
-  /// // For User response
-  /// final response = ApiResponse<User>.fromJson(
-  ///   json,
-  ///   (data) => User.fromJson(data as Map<String, dynamic>),
-  /// );
-  ///
-  /// // For Product list response
-  /// final response = ApiResponse<List<Product>>.fromJson(
-  ///   json,
-  ///   (data) => (data as List)
-  ///       .map((item) => Product.fromJson(item))
-  ///       .toList(),
-  /// );
-  /// ```
-  factory ApiResponse.fromJson(
-    Map<String, dynamic> json,
-    T Function(Object?) fromJsonT,
-  ) =>
-      _$ApiResponseFromJson(json, fromJsonT);
-}
+  /// WHY NULLABLE?
+  /// - Success responses have data
+  /// - Error responses might not have data
+  final T? data;
 
-// ============================================================================
-// HELPER CONSTRUCTORS
-// ============================================================================
-// These factory constructors make it easier to create common response types
+  /// Error details (if request failed)
+  /// Only present when success = false
+  final String? error;
 
-extension ApiResponseExtension<T> on ApiResponse<T> {
+  /// HTTP status code (optional)
+  /// 200 = OK, 404 = Not Found, 500 = Server Error, etc.
+  final int? statusCode;
+
+  /// Creates an ApiResponse
+  const ApiResponse({
+    this.success = true,
+    this.message,
+    this.data,
+    this.error,
+    this.statusCode,
+  });
+
   /// Creates a success response
   ///
   /// WHEN TO USE:
@@ -177,7 +88,7 @@ extension ApiResponseExtension<T> on ApiResponse<T> {
   ///   message: 'Login successful',
   /// );
   /// ```
-  static ApiResponse<T> success<T>({
+  factory ApiResponse.success({
     required T data,
     String? message,
     int? statusCode,
@@ -203,7 +114,7 @@ extension ApiResponseExtension<T> on ApiResponse<T> {
   ///   statusCode: 401,
   /// );
   /// ```
-  static ApiResponse<T> error<T>({
+  factory ApiResponse.error({
     required String message,
     String? error,
     int? statusCode,
@@ -214,6 +125,17 @@ extension ApiResponseExtension<T> on ApiResponse<T> {
       error: error,
       statusCode: statusCode ?? 400,
     );
+  }
+
+  /// Checks if the response has data
+  bool get hasData => data != null;
+
+  /// Checks if the response has error
+  bool get hasError => error != null;
+
+  @override
+  String toString() {
+    return 'ApiResponse(success: $success, message: $message, data: $data, error: $error, statusCode: $statusCode)';
   }
 }
 
@@ -232,23 +154,6 @@ extension ApiResponseExtension<T> on ApiResponse<T> {
 //    - Type safety: response.data is typed as User, not dynamic
 //    - Code reuse: One class for all response types
 //    - Better autocomplete: IDE knows the exact type
-//
-//    EXAMPLE:
-//    ```dart
-//    // Without generics (bad)
-//    class ApiResponse {
-//      dynamic data; // Could be anything!
-//    }
-//    final response = ApiResponse();
-//    final user = response.data as User; // Manual casting, error-prone
-//
-//    // With generics (good)
-//    class ApiResponse<T> {
-//      T? data; // Typed!
-//    }
-//    final response = ApiResponse<User>();
-//    final user = response.data; // Already typed as User?, safe!
-//    ```
 //
 // 2. NULLABLE DATA (T?):
 //    Error responses might not have data, so data is nullable
@@ -279,62 +184,20 @@ extension ApiResponseExtension<T> on ApiResponse<T> {
 //    }
 //    ```
 //
-// 4. STATUS CODES:
-//    Common HTTP status codes:
+// 4. WHY NO JSON SERIALIZATION?
+//    For generic types, JSON serialization is complex.
+//    Instead, we:
+//    - Convert JSON directly to specific types (User, Product)
+//    - Use ApiResponse for in-memory response handling
+//    - Don't serialize/deserialize ApiResponse itself
 //
-//    SUCCESS (2xx):
-//    - 200 OK: Request succeeded
-//    - 201 Created: Resource created successfully
-//    - 204 No Content: Success but no data to return
-//
-//    CLIENT ERRORS (4xx):
-//    - 400 Bad Request: Invalid data sent
-//    - 401 Unauthorized: Not authenticated
-//    - 403 Forbidden: Not authorized
-//    - 404 Not Found: Resource doesn't exist
-//    - 422 Unprocessable Entity: Validation failed
-//
-//    SERVER ERRORS (5xx):
-//    - 500 Internal Server Error: Server crashed
-//    - 502 Bad Gateway: Server temporarily down
-//    - 503 Service Unavailable: Server overloaded
-//
-// 5. ERROR HANDLING PATTERN:
+//    Example flow:
 //    ```dart
-//    try {
-//      final response = await apiClient.post('/login', {...});
-//      final user = User.fromJson(response);
-//      return ApiResponse.success(data: user);
-//    } on HttpException catch (e) {
-//      return ApiResponse.error(
-//        message: 'Network error',
-//        error: e.message,
-//        statusCode: e.statusCode,
-//      );
-//    } catch (e) {
-//      return ApiResponse.error(
-//        message: 'Unexpected error',
-//        error: e.toString(),
-//      );
-//    }
+//    // In service
+//    final json = await apiClient.post('/login', {...});
+//    final user = User.fromJson(json);  // Direct conversion
+//    return ApiResponse.success(data: user);  // Wrap in response
 //    ```
-//
-// 6. WHY NOT THROW EXCEPTIONS?
-//    You COULD throw exceptions for errors:
-//    ```dart
-//    if (response.statusCode != 200) {
-//      throw Exception('Login failed');
-//    }
-//    ```
-//
-//    But using ApiResponse is better because:
-//    - More explicit (caller knows to check success)
-//    - Easier to handle (no try-catch needed everywhere)
-//    - Carries more info (message, error, status code)
-//    - Type-safe (compiler enforces checking)
-//
-//    EXCEPTIONS: Use for truly unexpected errors (null pointer, etc.)
-//    API_RESPONSE: Use for expected failures (invalid input, auth failed)
 //
 // ============================================================================
 // 🎯 USAGE EXAMPLES
@@ -404,16 +267,5 @@ extension ApiResponseExtension<T> on ApiResponse<T> {
 //   );
 // }
 // ```
-//
-// ============================================================================
-// 🎯 YOUR TASK
-// ============================================================================
-//
-// You'll use ApiResponse when implementing the signup feature!
-// It makes error handling much cleaner and more consistent.
-//
-// CHALLENGE:
-// Create a service method that returns ApiResponse<List<Product>>
-// and handles all possible errors gracefully!
 //
 // ============================================================================
